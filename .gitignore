@@ -1,0 +1,9 @@
+node_modules/
+dist/
+public/data/
+data/
+*.local
+.DS_Store
+* 2
+* 2.*
+__pycache__/

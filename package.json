@@ -1,0 +1,25 @@
+{
+  "name": "nuscenes-scene-explorer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "demo-data": "python3 preprocess/make_synthetic_sample.py public/data"
+  },
+  "dependencies": {
+    "three": "^0.169.0",
+    "vue": "^3.5.44"
+  },
+  "devDependencies": {
+    "@types/three": "^0.169.0",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "typescript": "5.6",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9",
+    "vue-tsc": "^2.2.12"
+  }
+}
