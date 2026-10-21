@@ -7,3 +7,4 @@ data/
 * 2
 * 2.*
 __pycache__/
+.venv/
