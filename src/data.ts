@@ -4,6 +4,7 @@ import type { DatasetIndex, Sample } from './types'
 const BASE = `${import.meta.env.BASE_URL}data/`
 const samples = new Map<string, Promise<Sample>>()
 const clouds = new Map<string, Promise<Float32Array>>()
+const projections = new Map<string, Promise<Uint16Array>>()
 
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(BASE + path)
@@ -29,7 +30,25 @@ export function loadPoints(file: string): Promise<Float32Array> {
   return clouds.get(file)!
 }
 
+/** LiDAR points projected into one camera image: Uint16 u, v, depth (cm) per point. Cached per file. */
+export function loadProjection(file: string): Promise<Uint16Array> {
+  if (!projections.has(file)) {
+    projections.set(file, fetch(BASE + file).then(async (res) => {
+      if (!res.ok) throw new Error(`Could not load ${file} (${res.status}).`)
+      return new Uint16Array(await res.arrayBuffer())
+    }))
+  }
+  return projections.get(file)!
+}
+
+export const imageUrl = (file: string) => BASE + file
+
 /** Warms the cache for the next few keyframes so scrubbing and playback stay smooth. */
 export function prefetch(tokens: string[]): void {
-  for (const t of tokens) loadSample(t).then((s) => loadPoints(s.lidar.file)).catch(() => undefined)
+  for (const t of tokens) {
+    loadSample(t).then((s) => {
+      loadPoints(s.lidar.file)
+      for (const c of s.cameras ?? []) new Image().src = imageUrl(c.image)
+    }).catch(() => undefined)
+  }
 }

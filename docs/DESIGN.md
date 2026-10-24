@@ -16,6 +16,11 @@
 | Colour points by height | Separates ground from obstacles without intensity calibration | Intensity view is a toggle for later |
 | Count boxes with ≤ 5 LiDAR points | Low-evidence labels are where annotation errors and invisible objects concentrate; seeds M3 | Threshold is a first guess, to be tuned on real data |
 | Prefetch the next 3 keyframes | Smooth scrubbing and 2 Hz playback | A little extra bandwidth |
+| Project boxes and LiDAR into the cameras offline, with the devkit | The devkit's calibration chain (lidar → ego → global → ego at camera time → camera) is the reference; doing it in the browser would duplicate it and risk subtle errors | Camera files are fixed at export width (640 px); 388 MB for nuScenes-mini |
+| Drop a box from a camera if any corner is behind the image plane | Projecting points behind the camera produces wild lines across the image | A box partly beside the car is not drawn in that camera even if part of it is visible |
+| Select by instance token, not annotation token | Annotation tokens change every keyframe; the instance is the same physical object, so the selection survives scrubbing and playback | Synthetic data uses its object id as the instance |
+| A camera click picks the nearest box (by nearest corner) | Overlapping projections are common; the nearest object is what the viewer sees. Nearest corner, not centre: a 10 m truck's centre sits behind a pedestrian next to its front | Ties fall back to the smallest box |
+| Keep selection in App.vue, no Pinia yet | Three views share one value (the selected object key); props and events are enough | Revisit when M3 adds a review queue |
 
 ## Measured (2026-10-24, v1.0-mini)
 - Converter: 10 scenes, 404 keyframes, 14,026,208 points, 18,538 boxes in 1.9 s; 219 MB of output.

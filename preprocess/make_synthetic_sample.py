@@ -59,7 +59,7 @@ def main():
                 dist = math.hypot(cx, cy)
                 n = max(0, int(900 / max(dist, 3)) - (12 if o["cat"].startswith("movable") else 0))
                 pts += box_points(cx, cy, cz, o["w"], o["l"], o["h"], o["yaw"], n)
-                boxes.append({"token": f"{o['id']}-k{k}", "category": o["cat"], "center": [round(cx, 3), round(cy, 3), round(cz, 3)],
+                boxes.append({"token": f"{o['id']}-k{k}", "instance": o["id"], "category": o["cat"], "center": [round(cx, 3), round(cy, 3), round(cz, 3)],
                               "size": [o["w"], o["l"], o["h"]], "yaw": round(o["yaw"], 4), "numLidarPts": n, "visibility": "v80-100"})
             with open(f"{OUT}/lidar/{tok}.bin", "wb") as f:
                 f.write(b"".join(struct.pack("<4f", *p) for p in pts))

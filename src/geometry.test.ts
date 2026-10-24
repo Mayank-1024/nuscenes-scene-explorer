@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { boxCorners, BOX_EDGES, headingSegment, heightToUnit } from './geometry'
+import { boxCorners, BOX_EDGES, convexHull, headingSegment, heightToUnit, insideConvex, polygonArea, rayBoxDistance } from './geometry'
+import type { Vec2 } from './geometry'
 
 const box = { center: [10, 5, 1] as [number, number, number], size: [2, 4, 1.5] as [number, number, number], yaw: 0 }
 
@@ -43,5 +44,41 @@ describe('heightToUnit', () => {
     expect(heightToUnit(-10)).toBe(0)
     expect(heightToUnit(10)).toBe(1)
     expect(heightToUnit(-0.25)).toBeCloseTo(0.5)
+  })
+})
+
+describe('rayBoxDistance', () => {
+  // box: centre (10, 5, 1), width 2 (y), length 4 (x), height 1.5, yaw 0
+  it('hits the near face from outside', () => {
+    expect(rayBoxDistance([0, 5, 1], [1, 0, 0], box)).toBeCloseTo(8) // x face at 10 - 4/2
+  })
+  it('misses when the ray passes beside the box', () => {
+    expect(rayBoxDistance([0, 7, 1], [1, 0, 0], box)).toBeNull() // y = 7 is outside 5 ± 1
+  })
+  it('misses when the box is behind the ray', () => {
+    expect(rayBoxDistance([20, 5, 1], [1, 0, 0], box)).toBeNull()
+  })
+  it('respects yaw: a 90 degree box is long along y', () => {
+    const turned = { ...box, yaw: Math.PI / 2 }
+    expect(rayBoxDistance([10, 0, 1], [0, 1, 0], turned)).toBeCloseTo(3) // y face at 5 - 4/2
+    expect(rayBoxDistance([0, 6.5, 1], [1, 0, 0], turned)).toBeCloseTo(9) // x face at 10 - 2/2
+  })
+  it('returns the exit distance from inside', () => {
+    expect(rayBoxDistance([10, 5, 1], [0, 0, 1], box)).toBeCloseTo(0.75)
+  })
+})
+
+describe('2D hit testing for projected boxes', () => {
+  const square: Vec2[] = [[0, 0], [4, 0], [4, 4], [0, 4], [2, 2]] // interior point must be dropped
+  it('hull drops interior points', () => {
+    expect(convexHull(square)).toHaveLength(4)
+  })
+  it('inside and outside', () => {
+    const h = convexHull(square)
+    expect(insideConvex(h, [1, 1])).toBe(true)
+    expect(insideConvex(h, [5, 1])).toBe(false)
+  })
+  it('area', () => {
+    expect(polygonArea(convexHull(square))).toBeCloseTo(16)
   })
 })

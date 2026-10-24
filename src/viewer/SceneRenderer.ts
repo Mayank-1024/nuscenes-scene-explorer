@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Box } from '../types'
-import { boxCorners, BOX_EDGES, headingSegment, heightToUnit } from '../geometry'
+import { objectKey } from '../types'
+import { boxCorners, BOX_EDGES, headingSegment, heightToUnit, rayBoxDistance } from '../geometry'
 import { categoryStyle } from '../categories'
 
 const RAMP = [new THREE.Color(0x2d3a8c), new THREE.Color(0x1fa2c7), new THREE.Color(0x9be15d), new THREE.Color(0xf9d423)]
@@ -25,6 +26,8 @@ export class SceneRenderer {
   private boxes: THREE.LineSegments
   private resize: ResizeObserver
   private frame = 0
+  private current: Box[] = []
+  private raycaster = new THREE.Raycaster()
 
   constructor(private host: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -63,14 +66,16 @@ export class SceneRenderer {
     this.replace(this.points.geometry, pos, col)
   }
 
+  /** selected: object key (instance), so the highlight follows the object across keyframes. */
   setBoxes(boxes: Box[], selected?: string): void {
+    this.current = boxes
     const segs = BOX_EDGES.length + 1 // edges + heading line
     const pos = new Float32Array(boxes.length * segs * 6)
     const col = new Float32Array(boxes.length * segs * 6)
     const c = new THREE.Color()
     let o = 0
     for (const b of boxes) {
-      c.setHex(b.token === selected ? 0xffffff : categoryStyle(b.category).color)
+      c.setHex(objectKey(b) === selected ? 0xffffff : categoryStyle(b.category).color)
       const k = boxCorners(b)
       const lines = [...BOX_EDGES.map(([a, z]) => [k[a], k[z]]), headingSegment(b)]
       for (const [p, q] of lines) {
@@ -80,6 +85,21 @@ export class SceneRenderer {
       }
     }
     this.replace(this.boxes.geometry, pos, col)
+  }
+
+  /** The nearest box under a screen point, or undefined. Exact ray vs oriented-box test, no meshes needed. */
+  pick(clientX: number, clientY: number): Box | undefined {
+    const r = this.renderer.domElement.getBoundingClientRect()
+    const ndc = new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1)
+    this.raycaster.setFromCamera(ndc, this.camera)
+    const { origin: o, direction: d } = this.raycaster.ray
+    let best: Box | undefined
+    let bestT = Infinity
+    for (const b of this.current) {
+      const t = rayBoxDistance([o.x, o.y, o.z], [d.x, d.y, d.z], b)
+      if (t !== null && t < bestT) { bestT = t; best = b }
+    }
+    return best
   }
 
   dispose(): void {

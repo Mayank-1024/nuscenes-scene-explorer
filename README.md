@@ -9,15 +9,15 @@ A browser tool for exploring the [nuScenes](https://www.nuscenes.org) autonomous
 | Milestone | Scope | Status |
 |---|---|---|
 | M1 | Scene list, 2 Hz keyframe timeline (scrub, play, arrow keys), LiDAR point cloud coloured by height, 3D boxes coloured by class with heading, per-keyframe stats | **Done**, runs on nuScenes v1.0-mini (2026-10-24) |
-| M2 | Six camera views with projected boxes; click a box to highlight it in every view | Planned |
+| M2 | Six camera views with projected boxes and optional LiDAR-on-image overlay; click a box in the 3D view or any camera to select it everywhere, with an attribute panel; the selection follows the object across keyframes | **Done** (2026-10-24) |
 | M3 | Annotation QA: flag boxes with very few LiDAR points or low visibility, review queue with shortcuts, export | Planned (the low-evidence count is already shown) |
 | M4 | Load a nuScenes-format detection results file, match predictions to ground truth, highlight high-confidence false positives and misses | Planned |
 | M5 | Performance pass (Web Worker parsing, measured load time and FPS) and a design doc update | Planned |
 
-![scene-0061 from nuScenes v1.0-mini: LiDAR points coloured by height, 3D boxes coloured by class](docs/screenshot-mini.png)
-*scene-0061, keyframe 6 of 39, from nuScenes v1.0-mini. Data: nuScenes by Motional, CC BY-NC-SA 4.0.*
+![scene-0061 from nuScenes v1.0-mini: LiDAR and 3D boxes above, the six cameras with the same boxes projected below; a selected barrier is white in both](docs/screenshot-m2.png)
+*scene-0061 from nuScenes v1.0-mini: a barrier selected in the 3D view is highlighted in the FRONT camera. [With LiDAR on the images](docs/screenshot-m2-lidar.png). Data: nuScenes by Motional, CC BY-NC-SA 4.0.*
 
-**Measured on v1.0-mini (2026-10-24, MacBook):** the converter turned 10 scenes / 404 keyframes / 14.0 M LiDAR points / 18,538 boxes into browser files in 1.9 s (219 MB). A typical keyframe has about 34,800 points and 100 boxes, and in scene-0061 68 of 103 boxes have 5 or fewer LiDAR points (the low-evidence labels M3 will queue). Load and draw of one keyframe: 10 ms on the local dev server.
+**Measured on v1.0-mini (2026-10-24, MacBook):** the converter turns 10 scenes / 404 keyframes / 14.0 M LiDAR points / 18,538 boxes into browser files in 1.9 s (219 MB) without cameras, or in 59 s with all 2,424 camera images, projected boxes and projected LiDAR (388 MB). A typical keyframe has about 34,800 points and 100 boxes, and in scene-0061 68 of 103 boxes have 5 or fewer LiDAR points (the low-evidence labels M3 will queue). Load and draw of one keyframe: 10 ms on the local dev server.
 
 ## Run it
 

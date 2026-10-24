@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
 import type { DatasetIndex, Sample } from './types'
+import { objectKey } from './types'
 import { loadIndex, loadPoints, loadSample, prefetch } from './data'
 import SceneList from './components/SceneList.vue'
 import PointCloudView from './components/PointCloudView.vue'
 import Timeline from './components/Timeline.vue'
 import InfoPanel from './components/InfoPanel.vue'
+import CameraGrid from './components/CameraGrid.vue'
 
 const index = shallowRef<DatasetIndex>()
 const sceneToken = ref<string>()
@@ -15,9 +17,19 @@ const firstSample = shallowRef<Sample>()
 const points = shallowRef<Float32Array>()
 const loadMs = ref<number>()
 const error = ref<string>()
+const selected = ref<string>() // object key (instance): survives keyframe changes
+const showLidar = ref(false)
 let request = 0 // drops responses that arrive after the user has moved on
 
 const scene = computed(() => index.value?.scenes.find((s) => s.token === sceneToken.value))
+const selectedBox = computed(() => sample.value?.boxes.find((b) => objectKey(b) === selected.value))
+const seenIn = computed(() => {
+  const b = selectedBox.value
+  return b ? (sample.value?.cameras ?? []).filter((c) => c.boxes.some((cb) => cb.token === b.token)).map((c) => c.channel) : []
+})
+function pick(key: string | undefined) { selected.value = key }
+function onKey(e: KeyboardEvent) { if (e.key === 'Escape') selected.value = undefined }
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 async function show(i: number) {
   const s = scene.value
@@ -40,12 +52,14 @@ async function show(i: number) {
 
 async function selectScene(token: string) {
   sceneToken.value = token
+  selected.value = undefined
   const s = scene.value!
   firstSample.value = await loadSample(s.samples[0])
   await show(0)
 }
 
 onMounted(async () => {
+  window.addEventListener('keydown', onKey)
   try {
     index.value = await loadIndex()
     if (index.value.scenes.length) await selectScene(index.value.scenes[0].token)
@@ -66,7 +80,15 @@ onMounted(async () => {
     <main v-else-if="index">
       <SceneList :scenes="index.scenes" :active="sceneToken" @select="selectScene" />
       <section class="stage">
-        <PointCloudView :points="points" :boxes="sample?.boxes" />
+        <PointCloudView :points="points" :boxes="sample?.boxes" :selected="selected" @pick="pick" />
+        <CameraGrid
+          v-if="sample?.cameras?.length"
+          v-model:show-lidar="showLidar"
+          :cameras="sample.cameras"
+          :boxes="sample.boxes"
+          :selected="selected"
+          @pick="pick"
+        />
         <Timeline
           v-if="scene"
           :count="scene.samples.length"
@@ -76,7 +98,14 @@ onMounted(async () => {
           @seek="show"
         />
       </section>
-      <InfoPanel :boxes="sample?.boxes ?? []" :point-count="points ? points.length / 4 : 0" :load-ms="loadMs" />
+      <InfoPanel
+        :boxes="sample?.boxes ?? []"
+        :point-count="points ? points.length / 4 : 0"
+        :load-ms="loadMs"
+        :selected="selectedBox"
+        :seen-in="seenIn"
+        :selected-missing="selected !== undefined && !selectedBox"
+      />
     </main>
     <p v-else class="loading">Loading dataset…</p>
     <footer>Data: <a href="https://www.nuscenes.org" target="_blank" rel="noopener">nuScenes</a> by Motional, CC BY-NC-SA 4.0 (non-commercial). This project is not affiliated with Motional.</footer>

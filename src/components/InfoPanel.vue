@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import type { Box } from '../types'
 import { categoryStyle, hex, legendEntries } from '../categories'
 
-const props = defineProps<{ boxes: Box[]; pointCount: number; loadMs?: number }>()
+const props = defineProps<{ boxes: Box[]; pointCount: number; loadMs?: number; selected?: Box; seenIn?: string[]; selectedMissing?: boolean }>()
+
+const distance = (b: Box) => Math.hypot(b.center[0], b.center[1])
 
 const counts = computed(() => {
   const m = new Map<string, number>()
@@ -23,6 +25,18 @@ const lowEvidence = computed(() => props.boxes.filter((b) => b.numLidarPts <= 5)
       <dt>≤ 5 LiDAR points</dt><dd>{{ lowEvidence }}</dd>
       <dt v-if="loadMs !== undefined">Load + draw</dt><dd v-if="loadMs !== undefined">{{ loadMs.toFixed(0) }} ms</dd>
     </dl>
+    <template v-if="selected">
+      <h2>Selected object</h2>
+      <dl class="stats selected">
+        <dt>Class</dt><dd>{{ selected.category }}</dd>
+        <dt>Distance</dt><dd>{{ distance(selected).toFixed(1) }} m</dd>
+        <dt>Size (w × l × h)</dt><dd>{{ selected.size.map((v) => v.toFixed(1)).join(' × ') }} m</dd>
+        <dt>LiDAR points</dt><dd :class="{ warn: selected.numLidarPts <= 5 }">{{ selected.numLidarPts }}</dd>
+        <dt>Visibility</dt><dd>{{ selected.visibility }}</dd>
+        <dt>Seen in</dt><dd>{{ seenIn?.length ? seenIn.map((c) => c.replace('CAM_', '').replace('_', ' ')).join(', ') : 'no camera' }}</dd>
+      </dl>
+    </template>
+    <p v-else-if="selectedMissing" class="hint">The selected object is not annotated in this keyframe.</p>
     <h2>Objects by class</h2>
     <ul class="legend">
       <li v-for="e in counts" :key="e.key">
