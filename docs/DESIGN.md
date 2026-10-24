@@ -17,5 +17,10 @@
 | Count boxes with ≤ 5 LiDAR points | Low-evidence labels are where annotation errors and invisible objects concentrate; seeds M3 | Threshold is a first guess, to be tuned on real data |
 | Prefetch the next 3 keyframes | Smooth scrubbing and 2 Hz playback | A little extra bandwidth |
 
+## Measured (2026-10-24, v1.0-mini)
+- Converter: 10 scenes, 404 keyframes, 14,026,208 points, 18,538 boxes in 1.9 s; 219 MB of output.
+- Load and draw of one keyframe: 10 ms on the local dev server (one measurement, headless browser; repeat in desktop Chrome for M5).
+- Low-evidence boxes are common: 68 of 103 in scene-0061 keyframe 6 have 5 or fewer LiDAR points, so the M3 threshold needs tuning before it is useful as a queue.
+
 ## Not yet measured
-Load time, frame rate and memory on nuScenes-mini (≈ 34k points per keyframe). These go here and in the README once measured.
+Frame rate and memory during playback, and load time on a cold cache (M5).
